@@ -1,15 +1,15 @@
 import { fetchPhotosByQuery } from './js/pixabay-api';
 import { createGalleryCardTemplate } from './js/render-functions';
-
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 
 const searchFormEl = document.querySelector('.js-search-form');
 const galleryEl = document.querySelector('.js-gallery');
 const loader = document.querySelector('.loader');
+
+let lightbox; 
 
 const searchFromSubmit = event => {
   event.preventDefault();
@@ -20,12 +20,10 @@ const searchFromSubmit = event => {
 
   if (searchQuery === '') {
     hideLoader();
-
     iziToast.error({
       title: 'Error!',
-      message: 'Sorry, there are no images matching your search query. Please try again!',
+      message: 'Please enter a search term!',
     });
-
     return;
   }
 
@@ -34,28 +32,36 @@ const searchFromSubmit = event => {
       if (data.hits.length === 0) {
         iziToast.error({
           title: 'Error!',
-          message: 'Sorry, there are no images matching your search query. Please try again!',
+          message: 'Sorry, no images found for your search query.',
         });
 
         galleryEl.innerHTML = '';
-
         searchFormEl.reset();
-
         return;
       }
-      const galleryTamplate = data.hits
+
+      const galleryTemplate = data.hits
         .map(el => createGalleryCardTemplate(el))
         .join('');
 
-      galleryEl.innerHTML = galleryTamplate;
+      galleryEl.innerHTML = galleryTemplate;
 
-      new SimpleLightbox('.gallery a', {
-        captionsData: 'alt',
-        captionDelay: 250,
-      });
+      
+      if (lightbox) {
+        lightbox.refresh();
+      } else {
+        lightbox = new SimpleLightbox('.gallery a', {
+          captionsData: 'alt',
+          captionDelay: 250,
+        });
+      }
     })
     .catch(err => {
-      console.log(err);
+      iziToast.error({
+        title: 'Error!',
+        message: 'Something went wrong. Please try again later.',
+      });
+      console.error(err);
     })
     .finally(() => hideLoader());
 };
